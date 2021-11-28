@@ -1,0 +1,7 @@
+The stack (represents the memory of the program) has three segments.
+
+The first segment contains two registers. The first register just points to the stack itself (by reference). The second register contains the user input, which is usually a string. These registers are used by the LOAD instruction.
+
+The second segment contains the loaded code. For each line of the code there is a cell on the stack containing the amount of chickens on that line. This segment is directly used for execution. It is automatically padded with a single EXIT instruction.
+
+The third segment contains the actual program stack. As instructions are executed, they will push and pop values in this space. Since the segments are not isolated, it is possible to modify values in the code space or execute in the user stack space.
