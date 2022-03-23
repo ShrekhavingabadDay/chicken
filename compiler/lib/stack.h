@@ -2,27 +2,23 @@
 #define STACK
 
 #include<stdlib.h>
-#include<stdio.h>
+#include<stdbool.h>
+#include<string.h>
+#include "error.h"
 
 typedef struct _stackelem {
-	char value;
+    bool is_string;
+    int value;
 	struct _stackelem *next;
 } stackelem;
 
 void free_stack(stackelem *head);
-
-stackelem* find_tail(stackelem *head);
-
 void print_stack(stackelem *head);
-
-stackelem* new_stack();
-
-void push(stackelem *head, int value);
-
-void push_back(stackelem *head, int value);
-
-char pop(stackelem *head);
-
-stackelem* stack_get(stackelem *head, int index);
+stackelem *new_stack();
+void stack_push(stackelem *head, int value);
+void stack_push_back(stackelem *head, int value);
+stackelem *stack_pop(stackelem *head, error *e);
+stackelem *stack_get(stackelem *head, int index, error *e);
+stackelem *string_to_stack(char *str);
 
 #endif
