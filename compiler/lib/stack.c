@@ -1,20 +1,21 @@
 #include "stack.h"
 #include<stdlib.h>
 #include<stdio.h>
+#include<string.h>
 
-/* size of stack is stored in the head element */
+/* head element just complicates things... */
 
-void free_stack(stackelem *head){
+void free_stack(stackelem *first){
 	stackelem *tmp;
-	while (head != NULL){
-		tmp = head;
-		head = head->next;
+	while (first != NULL){
+		tmp = first;
+		first = first->next;
 		free(tmp);
 	}
 }
 
-void print_stack(stackelem *head){
-	stackelem *iter = head->next;
+void print_stack(stackelem *first){
+	stackelem *iter = first;
 	while (iter != NULL){
         printf("%d ", iter->value);
 		iter = iter->next;
@@ -24,6 +25,7 @@ void print_stack(stackelem *head){
 stackelem *create_stackelem(int value){
     stackelem *new = (stackelem*) malloc(sizeof(stackelem));
     new->value = value;
+    new->next = NULL;
     return new;
 }
 
@@ -31,116 +33,116 @@ stackelem *create_string_stackelem(int value) {
     stackelem *new = (stackelem*) malloc(sizeof(stackelem));
     new->value = value;
     new->is_string = true;
+    new->next = NULL;
+    return new;
+}
+/*
+stackelem *stack_push(stackelem *first, int value){
+	stackelem *new = create_stackelem(value);
+	first->next = new;
+    new->next = NULL;
     return new;
 }
 
-stackelem *new_stack(){
-	stackelem *head = create_stackelem(0);
-	head->next = NULL;
-	return head;
-}
-
-stackelem *new_string_stack(){
-    stackelem *head = create_string_stackelem(0);
-    head->next = NULL;
-    return head;
-}
-
-void stack_push(stackelem *head, int value){
-    head->value++;
-	stackelem *new = create_stackelem(value);
-	stackelem *first = head->next;
-	new->next = first;
-	head->next = new;
-}
-
-void stack_push_string(stackelem *head, int value){
-    head->value++;
+stackelem *stack_push_string(stackelem *first, int value){
 	stackelem *new = create_string_stackelem(value);
-	stackelem *first = head->next;
-	new->next = first;
-	head->next = new;
+	first->next = new;
+    new->next = NULL;
+    return new;
 }
+*/
+void stack_push(stackelem *first, int value){
 
-void stack_push_back(stackelem *head, int value){
-
-    // if list is empty:
-    if (head->value == 0){
-        stack_push(head, value); 
-        return;
-    }
-
-    // finding last elem
-    error *e;
-    stackelem *last = stack_get(head, head->value, e);
-
-    if (e == NULL) {
-        show_error(e);
-        return;
+    stackelem *iter = first;
+    while ( iter->next != NULL ){
+        iter = iter->next;
     }
 
     stackelem *new = create_stackelem(value);
-    last->next = new;
+    iter->next = new;
     new->next = NULL;
-    head->value++;
+
 }
 
-stackelem *stack_pop(stackelem *head, error *e){
+void string_stack_push(stackelem *first, int value){
 
-    error *err = NULL;
-
-    if (head->value == 0) {
-      err = (error*)malloc(sizeof(error));
-      strcpy(err->origin, "[STACK]");
-      strcpy(err->message, "Cannot pop: no value in stack!");
-      e = err;
-      return 0;
+    stackelem *iter = first;
+    while ( iter->next != NULL ){
+        iter = iter->next;
     }
 
-    head->value--;
-	stackelem *first = head->next;
-	stackelem *second = first->next;
-	head->next = second;
-    free(first);
-    e = err;
-    return first;
+    stackelem *new = create_string_stackelem(value);
+    iter->next = new;
+    new->next = NULL;
 }
 
-stackelem *stack_get(stackelem* head, int index, error *e){
+stackelem *stack_pop(stackelem *first){
+    stackelem *iter = first;
+    if (iter == NULL) return NULL;
+    while (iter->next != NULL) iter = iter->next;
+    return iter;
+}
 
-    error *err = NULL;
+stackelem *stack_get(stackelem* first, int index){
 
-    index--;
+    // cannot get anything below one:
+    if (index < 1) return NULL;
 
-    if (index <= -1 || index >= head->value){
-        strcpy(err->origin, "[STACK]");
-
-        char str[50];
-        sprintf(str, "Cannot get %d from stack: out of bounds!", index);
-
-        strcpy(err->message, str);
-        e = err;
-        return NULL;
+    /* the stack enumeration in chicken starts from index 1 */
+    int i = 1;
+    stackelem *iter = first;
+    while (iter->next != NULL && i < index){
+        iter = iter->next;
+        i++;
     }
+    // couldn't get to that index -> out of bounds
+    if (i < index) return NULL;
 
-    stackelem* elem = head->next;
-    for (int i = 0; i<index; i++)
-        elem = elem->next;
-
-    e = err;
-    return elem;
-
+    return iter;
 }
 
 stackelem *string_to_stack(char *str){
 
-    stackelem *head = new_string_stack();
+    int string_length = strlen(str);
 
-    int i = 0;
-    while (str[i] != '\0'){
-        stack_push_back(head, (int)str[i]);
-        i++;
+    if (string_length < 1) return NULL;
+
+    if (string_length == 1) return create_string_stackelem((int)str[0]);
+
+    stackelem *first = create_string_stackelem((int)str[0]);
+    for (int i = 1; i<string_length; i++){
+        string_stack_push(first, (int)str[i]);
     }
+    return first;
 
-    return head;
+}
+
+int stack_length(stackelem *first){
+    stackelem *iter = first;
+    if (iter == NULL) return 0;
+    if (iter->next == NULL) return 1;
+    int length = 1;
+    while (iter->next != NULL){
+        length++;
+        iter = iter->next;
+    }
+    return length;
+}
+
+stackelem *stack_peek(stackelem *first){
+    if (first == NULL) return NULL;
+    stackelem *iter = first;
+    while (iter->next != NULL)
+        iter = iter->next;
+    return iter;
+}
+
+void stack_push_string(stackelem *stack, stackelem *string){
+    stackelem *iter = string;
+    stackelem *stack_last = stack_peek(stack);
+    do{
+        stack_last->next = iter;
+        stack_last = stack_last->next;
+        iter = iter->next;
+    }while(iter != NULL);
 }

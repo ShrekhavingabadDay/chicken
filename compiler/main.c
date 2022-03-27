@@ -16,10 +16,15 @@ typedef enum {
 } OPCODE;
 
 typedef struct {
-    stackelem *third_segment; // stores the pointer to the head of the segment usable by the program as memory
-    stackelem *second_segment; // stores the pointer to the head of the segment that stores the instructions
-    stackelem *input_register; // stores the pointer to the head of the input stack
-} program_stack;
+    stackelem *main_stack; // pointer to the main program stack
+    stackelem *input_register; // pointer to user input
+} First_Segment;
+
+typedef struct {
+    First_Segment first_segment;
+    stackelem *second_segment; // second segment soters code
+    int third_segment_start;
+} main_stack;
 
 stackelem *tokenize(char *filename){
 
@@ -27,24 +32,30 @@ stackelem *tokenize(char *filename){
 
     if (input == NULL)
         return NULL;
-
-	stackelem *stack = new_stack();
 	
 	char c, prev = 0;
 	int chickens = 0;
 
+    stackelem *stack = NULL;
 	do{
         c = getc(input);
 		if (c == ' ') chickens++;
 		else if (c == '\n'){
+
 			if (prev != '\n') chickens++;
-			stack_push_back(stack, chickens);
+
+            if (stack == NULL){
+                stack = create_stackelem(chickens);
+            }else{
+			    stack_push(stack, chickens);
+            }
+
 			chickens = 0;
 		}
         prev = c;
     }while(!feof(input));
 
-    stack_push_back(stack, 0); // appending the EXIT opcode
+    stack_push(stack, AXE);
 
 	fclose(input);
 	return stack;
@@ -52,19 +63,42 @@ stackelem *tokenize(char *filename){
 
 int compile(stackelem *code_segment, char *user_input){
 
-        program_stack ps;
-        stackelem *input_string = string_to_stack(user_input);
+        main_stack stack_main;
 
-        ps.second_segment = code_segment;
-        ps.third_segment = new_stack();
-        ps.input_register = input_string;
+        stack_main.first_segment.input_register = string_to_stack(user_input);
+        stack_main.second_segment = code_segment;
+        //storing the index where the program stack starts for referencing it later
+        stack_main.third_segment_start = stack_length(stack_main.second_segment);
 
-        print_stack(ps.second_segment);
-	    print_stack(ps.input_register);
+        /*
+        print_stack(stack_main.second_segment);
+	    print_stack(stack_main.first_segment.input_register);
+        printf("program stack starts at: %d\n", stack_main.third_segment_start);
+        */
 
-	    free_stack(ps.second_segment);
-        free_stack(ps.input_register);
-        free_stack(ps.third_segment);
+        stackelem *current_opcode = stack_main.second_segment;
+        OPCODE opcode = current_opcode->value;
+
+        while (opcode != AXE){
+
+            switch (opcode) {
+
+                case CHICKEN:
+                    stack_push_string(stack_main.second_segment, string_to_stack("chicken"));
+
+                default:
+                    break;
+
+            }
+            current_opcode = current_opcode->next;
+            opcode = current_opcode->value;
+            
+        }
+
+        printf("OUTPUT: %c\n", stack_peek(stack_main.second_segment)->value);
+
+	    free_stack(stack_main.second_segment);
+        free_stack(stack_main.first_segment.input_register);
 
         return 0;
 }
