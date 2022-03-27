@@ -17,7 +17,7 @@ typedef enum {
 
 typedef struct {
     stackelem *main_stack; // pointer to the main program stack
-    stackelem *input_register; // pointer to user input
+    char *input_register; // pointer to user input
 } First_Segment;
 
 typedef struct {
@@ -65,7 +65,7 @@ int compile(stackelem *code_segment, char *user_input){
 
         main_stack stack_main;
 
-        stack_main.first_segment.input_register = string_to_stack(user_input);
+        stack_main.first_segment.input_register = user_input;
         stack_main.second_segment = code_segment;
         //storing the index where the program stack starts for referencing it later
         stack_main.third_segment_start = stack_length(stack_main.second_segment);
@@ -84,7 +84,7 @@ int compile(stackelem *code_segment, char *user_input){
             switch (opcode) {
 
                 case CHICKEN:
-                    stack_push_string(stack_main.second_segment, string_to_stack("chicken"));
+                    stack_push_string(stack_main.second_segment, "chicken");
 
                 default:
                     break;
@@ -95,10 +95,13 @@ int compile(stackelem *code_segment, char *user_input){
             
         }
 
-        printf("OUTPUT: %c\n", stack_peek(stack_main.second_segment)->value);
+        stackelem *top_of_stack = stack_peek(stack_main.second_segment);
+        if (top_of_stack->string != NULL){
+            print_chicken_string(top_of_stack->string);
+            printf("\n");
+        }
 
 	    free_stack(stack_main.second_segment);
-        free_stack(stack_main.first_segment.input_register);
 
         return 0;
 }
