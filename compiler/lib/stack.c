@@ -1,4 +1,6 @@
 #include "stack.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* stack functions */
@@ -8,14 +10,15 @@ void free_stack(stackelem *first){
 	while (first != NULL){
 		tmp = first;
 		first = first->next;
-		free(tmp);
+        free(tmp);
 	}
 }
 
 void print_stack(stackelem *first){
 	stackelem *iter = first;
 	while (iter != NULL){
-        printf("%d ", iter->value);
+        if (iter->string != NULL) printf("%s nice", iter->string);
+        else printf("%d ", iter->value);
 		iter = iter->next;
 	}
 }
@@ -41,6 +44,12 @@ void stack_push(stackelem *first, int value){
 
 }
 
+stackelem *stack_push_back(stackelem *first, int value){
+    stackelem *new = create_stackelem(value, NULL);
+    new->next = first;
+    return new;
+}
+
 void stack_push_string(stackelem *first, char *str){
 
     stackelem *iter = first;
@@ -54,20 +63,31 @@ void stack_push_string(stackelem *first, char *str){
 
 }
 
+stackelem *stack_push_back_string(stackelem *first, char *str){
+    stackelem *new = create_stackelem(0, str);
+    new->next = first;
+    return new;
+}
+
 stackelem *stack_pop(stackelem *first){
     stackelem *iter = first;
+    stackelem *prev = NULL;
     if (iter == NULL) return NULL;
-    while (iter->next != NULL) iter = iter->next;
+    while (iter->next != NULL){
+        prev = iter;
+        iter = iter->next;
+    }
+    if (prev != NULL) prev->next = NULL;
     return iter;
 }
 
 stackelem *stack_get(stackelem* first, int index){
 
     // cannot get anything below one:
-    if (index < 1) return NULL;
+    if (index < 0) return NULL;
 
     /* the stack enumeration in chicken starts from index 1 */
-    int i = 1;
+    int i = 0;
     stackelem *iter = first;
     while (iter->next != NULL && i < index){
         iter = iter->next;
@@ -97,4 +117,14 @@ stackelem *stack_peek(stackelem *first){
     while (iter->next != NULL)
         iter = iter->next;
     return iter;
+}
+
+void stack_add_elem(stackelem *stack, stackelem *element){
+    stackelem *iter = stack;
+    while ( iter->next != NULL ){
+        iter = iter->next;
+    }
+
+    iter->next = element;
+    element->next = NULL;
 }

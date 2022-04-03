@@ -3,6 +3,9 @@
 // length of the string "chicken"
 #define CHN_LEN 7
 
+// subtract this to get value that needs to get pushed onto the stack
+#define OFFSET 10
+
 typedef enum {
     AXE, // exit
     CHICKEN, // prints chicken
@@ -17,22 +20,18 @@ typedef enum {
 } OPCODE;
 
 typedef struct {
-    stackelem *main_stack; // pointer to the main program stack
-    char *input_register; // pointer to user input
-} First_Segment;
-
-typedef struct {
-    First_Segment first_segment;
-    stackelem *second_segment; // second segment soters code
-    int third_segment_start;
+    stackelem *self; // pointer to the main program stack
+    stackelem *stack; // pointer to rest of stack
+    char *user_input; // pointer to user input
 } main_stack;
 
+// TODO: make tokenizer sensitive to syntax errors, give hints on where the error is located
 stackelem *tokenize(char *filename){
 
 	FILE *input = fopen(filename, "r");
     int row, col = 1;
-    int wb_index = 0;
-    char word_buffer[CHN_LEN];
+    // int wb_index = 0;
+    // char word_buffer[CHN_LEN];
 
     if (input == NULL)
         return NULL;
@@ -44,7 +43,7 @@ stackelem *tokenize(char *filename){
 	do{
         c = getc(input);
 
-        word_buffer[wb_index] = c;
+        // word_buffer[wb_index] = c;
         
 
 		if (c == ' ') chickens++;
@@ -52,11 +51,10 @@ stackelem *tokenize(char *filename){
 
 			if (prev != '\n') chickens++;
 
-            if (stack == NULL){
+            if (stack == NULL)
                 stack = create_stackelem(chickens, NULL);
-            }else{
+            else
 			    stack_push(stack, chickens);
-            }
 
 			chickens = 0;
 		}
@@ -69,43 +67,109 @@ stackelem *tokenize(char *filename){
 	return stack;
 }
 
+/* ----- functions used at compilation ----- */
+
+OPCODE next_opcode(stackelem *current_opcode){
+    current_opcode = current_opcode->next;
+    return current_opcode->value;
+}
+
+void chicken_op(stackelem *v){
+    stack_push_string(v, "chicken");
+}
+
+void add_op(stackelem *v){
+    stackelem *s_a = stack_pop(v);
+    stackelem *s_b = stack_pop(v);
+
+    // TODO #1: do typechecking instead of naive approach
+    int a = s_a->value;
+    int b = s_b->value;
+
+    free(s_a);
+    free(s_b);
+
+    stack_push(v, a+b);
+}
+
+void ten_or_more_op(stackelem *v, int amount){
+    stack_push(v, amount-OFFSET);
+}
+
+void subtract_op(stackelem *v){
+    stackelem *s_a = stack_pop(v);
+    stackelem *s_b = stack_pop(v);
+
+    // TODO #1: do typechecking instead of naive approach
+    int a = s_a->value;
+    int b = s_b->value;
+
+    free(s_a);
+    free(s_b);
+    
+    stack_push(v, b-a);
+}
+
+// double-wide instructions get current_opcode pointer as argument
+void load_op(main_stack *ms, stackelem *current_opcode){
+
+    int load_from = next_opcode(current_opcode);
+    stackelem *popped = stack_pop(ms->stack);
+    int index = popped->value;
+    free(popped);
+
+    if (!load_from)
+        stack_add_elem(ms->stack, stack_get(ms->stack, index-1));
+
+    if (load_from)
+        stack_push(ms->stack, ms->user_input[index]);
+}
+
 int compile(stackelem *code_segment, char *user_input){
 
-        main_stack stack_main;
+    main_stack ms;
+    
+    ms.user_input = user_input;
+    ms.stack = code_segment;
+    ms.stack = stack_push_back_string(code_segment, user_input);
+    ms.self = ms.stack;
 
-        stack_main.first_segment.input_register = user_input;
-        stack_main.second_segment = code_segment;
-        stack_main.third_segment_start = stack_length(stack_main.second_segment);
+    stackelem *current_opcode = stack_get(ms.stack, 1);
+    OPCODE opcode = current_opcode->value;
 
-        stackelem *current_opcode = stack_main.second_segment;
-        OPCODE opcode = current_opcode->value;
+    print_stack(ms.stack);
+    return 1;
 
-        while (opcode != AXE){
+    while (opcode != AXE){
 
-            switch (opcode) {
+        switch (opcode) {
 
-                case CHICKEN:
+            case ADD:
+                add_op(ms.stack);
 
-                    stack_push_string(stack_main.second_segment, "chicken");
+            case CHICKEN:
+                chicken_op(ms.stack);
 
-                default:
-                    break;
+            case PICK:
+                load_op(&ms, current_opcode);
 
-            }
-            current_opcode = current_opcode->next;
-            opcode = current_opcode->value;
-            
+            default:
+                ten_or_more_op(ms.stack, opcode);
+
         }
+        opcode = next_opcode(current_opcode);        
+    }
 
-        stackelem *top_of_stack = stack_peek(stack_main.second_segment);
-        if (top_of_stack->string != NULL){
-            printf("%s", top_of_stack->string);
-            printf("\n");
-        }
+    stackelem *top_of_stack = stack_peek(ms.stack);
+    if (top_of_stack->string != NULL){
+        printf("%s\n", top_of_stack->string);
+    } else {
+        printf("%d\n", top_of_stack->value);
+    }
 
-	    free_stack(stack_main.second_segment);
+    free_stack(ms.self);
 
-        return 0;
+    return 0;
 }
 
 int main(int argc, char *argv[]){
@@ -117,13 +181,17 @@ int main(int argc, char *argv[]){
 
     char *file = argv[1]; 
 
+    // printf("%s\n", file);
 	stackelem *program_segment = tokenize(file);
     if (program_segment == NULL) {
         printf("%s does not exist!\n", file);
         return 1;
     }
 
+    if (argc >= 3)
     compile(program_segment, argv[2]);
+    else
+    compile(program_segment, "");
 
 	return 0;
 }
