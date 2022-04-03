@@ -1,51 +1,5 @@
 #include "stack.h"
-#include<stdlib.h>
-#include<stdio.h>
-#include<string.h>
-
-// string functions
-stringelem *create_stringelem(char value) {
-    stringelem *new = (stringelem*) malloc(sizeof(stringelem));
-    new->value = value;
-    new->next = NULL;
-    return new;
-}
-
-void string_push(stringelem *first, char value){
-
-    stringelem *iter = first;
-    while ( iter->next != NULL ){
-        iter = iter->next;
-    }
-
-    stringelem *new = create_stringelem(value);
-    iter->next = new;
-    new->next = NULL;
-}
-
-stringelem *create_chicken_string(char *str){
-
-    int string_length = strlen(str);
-
-    if (string_length < 1) return NULL;
-
-    if (string_length == 1) return create_stringelem((int)str[0]);
-
-    stringelem *first = create_stringelem((int)str[0]);
-    for (int i = 1; i<string_length; i++){
-        string_push(first, (int)str[i]);
-    }
-    return first;
-
-}
-
-void print_chicken_string(stringelem *s){
-    stringelem *iter = s;
-    while (iter != NULL) {
-        printf("%c", iter->value);
-        iter = iter->next;
-    }
-}
+#include <string.h>
 
 /* stack functions */
 
@@ -66,17 +20,10 @@ void print_stack(stackelem *first){
 	}
 }
 
-stackelem *create_stackelem(int value){
+stackelem *create_stackelem(int value, char *string){
     stackelem *new = (stackelem*) malloc(sizeof(stackelem));
     new->value = value;
-    new->string = NULL;
-    new->next = NULL;
-    return new;
-}
-
-stackelem *create_stackelem_for_string(stringelem *strelem){
-    stackelem *new = (stackelem*) malloc(sizeof(stackelem));
-    new->string = strelem;
+    new->string = string;
     new->next = NULL;
     return new;
 }
@@ -88,7 +35,7 @@ void stack_push(stackelem *first, int value){
         iter = iter->next;
     }
 
-    stackelem *new = create_stackelem(value);
+    stackelem *new = create_stackelem(value, NULL);
     iter->next = new;
     new->next = NULL;
 
@@ -96,14 +43,12 @@ void stack_push(stackelem *first, int value){
 
 void stack_push_string(stackelem *first, char *str){
 
-    stringelem *string = create_chicken_string(str);
-
     stackelem *iter = first;
     while ( iter->next != NULL ){
         iter = iter->next;
     }
-
-    stackelem *new = create_stackelem_for_string(string);
+    
+    stackelem *new = create_stackelem(0, str);
     iter->next = new;
     new->next = NULL;
 

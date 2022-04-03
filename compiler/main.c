@@ -1,6 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include "lib/stack.h"
+
+// length of the string "chicken"
+#define CHN_LEN 7
 
 typedef enum {
     AXE, // exit
@@ -29,6 +30,9 @@ typedef struct {
 stackelem *tokenize(char *filename){
 
 	FILE *input = fopen(filename, "r");
+    int row, col = 1;
+    int wb_index = 0;
+    char word_buffer[CHN_LEN];
 
     if (input == NULL)
         return NULL;
@@ -39,13 +43,17 @@ stackelem *tokenize(char *filename){
     stackelem *stack = NULL;
 	do{
         c = getc(input);
+
+        word_buffer[wb_index] = c;
+        
+
 		if (c == ' ') chickens++;
 		else if (c == '\n'){
 
 			if (prev != '\n') chickens++;
 
             if (stack == NULL){
-                stack = create_stackelem(chickens);
+                stack = create_stackelem(chickens, NULL);
             }else{
 			    stack_push(stack, chickens);
             }
@@ -67,14 +75,7 @@ int compile(stackelem *code_segment, char *user_input){
 
         stack_main.first_segment.input_register = user_input;
         stack_main.second_segment = code_segment;
-        //storing the index where the program stack starts for referencing it later
         stack_main.third_segment_start = stack_length(stack_main.second_segment);
-
-        /*
-        print_stack(stack_main.second_segment);
-	    print_stack(stack_main.first_segment.input_register);
-        printf("program stack starts at: %d\n", stack_main.third_segment_start);
-        */
 
         stackelem *current_opcode = stack_main.second_segment;
         OPCODE opcode = current_opcode->value;
@@ -84,6 +85,7 @@ int compile(stackelem *code_segment, char *user_input){
             switch (opcode) {
 
                 case CHICKEN:
+
                     stack_push_string(stack_main.second_segment, "chicken");
 
                 default:
@@ -97,7 +99,7 @@ int compile(stackelem *code_segment, char *user_input){
 
         stackelem *top_of_stack = stack_peek(stack_main.second_segment);
         if (top_of_stack->string != NULL){
-            print_chicken_string(top_of_stack->string);
+            printf("%s", top_of_stack->string);
             printf("\n");
         }
 
@@ -111,9 +113,6 @@ int main(int argc, char *argv[]){
     if (argc < 2) {
         printf("Live environment is not yet a feature, please provide source code to compile!\n");
         return 0;
-    } else if (argc > 2) {
-        printf("Too many arguments given!\n");
-        return 1;
     }
 
     char *file = argv[1]; 
@@ -124,7 +123,8 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
-    compile(program_segment, "soap");
+    compile(program_segment, argv[2]);
 
 	return 0;
 }
+
