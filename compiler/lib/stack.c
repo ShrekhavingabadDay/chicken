@@ -17,10 +17,11 @@ void free_stack(stackelem *first){
 void print_stack(stackelem *first){
 	stackelem *iter = first;
 	while (iter != NULL){
-        if (iter->string != NULL) printf("%s nice", iter->string);
+        if (iter->string != NULL) printf("%s ", iter->string);
         else printf("%d ", iter->value);
 		iter = iter->next;
 	}
+    printf("\n");
 }
 
 stackelem *create_stackelem(int value, char *string){
@@ -33,10 +34,11 @@ stackelem *create_stackelem(int value, char *string){
 
 void stack_push(stackelem *first, int value){
 
+    if (first==NULL) return;
+
     stackelem *iter = first;
-    while ( iter->next != NULL ){
+    while ( iter->next != NULL )
         iter = iter->next;
-    }
 
     stackelem *new = create_stackelem(value, NULL);
     iter->next = new;
@@ -45,6 +47,9 @@ void stack_push(stackelem *first, int value){
 }
 
 stackelem *stack_push_back(stackelem *first, int value){
+
+    if (first==NULL) return NULL;
+
     stackelem *new = create_stackelem(value, NULL);
     new->next = first;
     return new;
@@ -52,10 +57,11 @@ stackelem *stack_push_back(stackelem *first, int value){
 
 void stack_push_string(stackelem *first, char *str){
 
+    if (first==NULL) return;
+
     stackelem *iter = first;
-    while ( iter->next != NULL ){
+    while ( iter->next != NULL )
         iter = iter->next;
-    }
     
     stackelem *new = create_stackelem(0, str);
     iter->next = new;
@@ -64,6 +70,9 @@ void stack_push_string(stackelem *first, char *str){
 }
 
 stackelem *stack_push_back_string(stackelem *first, char *str){
+
+    if (first==NULL) return NULL;
+
     stackelem *new = create_stackelem(0, str);
     new->next = first;
     return new;
@@ -121,10 +130,11 @@ stackelem *stack_peek(stackelem *first){
 
 void stack_add_elem(stackelem *stack, stackelem *element){
     stackelem *iter = stack;
-    while ( iter->next != NULL ){
+    while ( iter->next != NULL )
         iter = iter->next;
-    }
 
-    iter->next = element;
-    element->next = NULL;
+    // iter->next = element;
+    // element->next = NULL;
+    stackelem *to_add = create_stackelem(element->value, element->string);
+    iter->next = to_add;
 }

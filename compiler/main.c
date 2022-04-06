@@ -1,4 +1,5 @@
 #include "lib/stack.h"
+#include <stdio.h>
 
 // length of the string "chicken"
 #define CHN_LEN 7
@@ -55,7 +56,6 @@ stackelem *tokenize(char *filename){
                 stack = create_stackelem(chickens, NULL);
             else
 			    stack_push(stack, chickens);
-
 			chickens = 0;
 		}
         prev = c;
@@ -69,9 +69,9 @@ stackelem *tokenize(char *filename){
 
 /* ----- functions used at compilation ----- */
 
-OPCODE next_opcode(stackelem *current_opcode){
-    current_opcode = current_opcode->next;
-    return current_opcode->value;
+OPCODE next_opcode(stackelem **current_opcode){
+    *current_opcode = (*current_opcode)->next;
+    return (*current_opcode)->value;
 }
 
 void chicken_op(stackelem *v){
@@ -113,15 +113,18 @@ void subtract_op(stackelem *v){
 // double-wide instructions get current_opcode pointer as argument
 void load_op(main_stack *ms, stackelem *current_opcode){
 
-    int load_from = next_opcode(current_opcode);
+    int load_from = next_opcode(&current_opcode);
+    // DEBUG: printf("loading from: %d\n", load_from);
+
     stackelem *popped = stack_pop(ms->stack);
     int index = popped->value;
     free(popped);
 
+    // index-1 because the "first element of the stack" is a pointer to itself
     if (!load_from)
         stack_add_elem(ms->stack, stack_get(ms->stack, index-1));
 
-    if (load_from)
+    else
         stack_push(ms->stack, ms->user_input[index]);
 }
 
@@ -137,30 +140,41 @@ int compile(stackelem *code_segment, char *user_input){
     stackelem *current_opcode = stack_get(ms.stack, 1);
     OPCODE opcode = current_opcode->value;
 
-    print_stack(ms.stack);
-    return 1;
-
     while (opcode != AXE){
 
         switch (opcode) {
 
             case ADD:
+                // printf("ADD operation\n");
                 add_op(ms.stack);
+                break;
 
             case CHICKEN:
+                // printf("CHICKEN operation\n");
                 chicken_op(ms.stack);
+                break;
 
             case PICK:
+                // printf("PICK operation\n");
                 load_op(&ms, current_opcode);
+                break;
 
             default:
+                // printf("TENORMORE operation\n");
                 ten_or_more_op(ms.stack, opcode);
+                break;
 
         }
-        opcode = next_opcode(current_opcode);        
+        opcode = next_opcode(&current_opcode);
+
+        // print_stack(ms.stack);
+        /* debugging: breaking on every instruction, because cat enters infinite loop
+        char debug;
+        scanf("%c", &debug);*/      
     }
 
     stackelem *top_of_stack = stack_peek(ms.stack);
+
     if (top_of_stack->string != NULL){
         printf("%s\n", top_of_stack->string);
     } else {
@@ -181,7 +195,6 @@ int main(int argc, char *argv[]){
 
     char *file = argv[1]; 
 
-    // printf("%s\n", file);
 	stackelem *program_segment = tokenize(file);
     if (program_segment == NULL) {
         printf("%s does not exist!\n", file);
@@ -189,9 +202,9 @@ int main(int argc, char *argv[]){
     }
 
     if (argc >= 3)
-    compile(program_segment, argv[2]);
+        compile(program_segment, argv[2]);
     else
-    compile(program_segment, "");
+        compile(program_segment, NULL);
 
 	return 0;
 }
