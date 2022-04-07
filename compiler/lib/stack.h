@@ -21,6 +21,7 @@ stackelem *stack_push_back(stackelem *s, int value);
 void stack_push_string(stackelem *stack, char *str);
 stackelem *stack_push_back_string(stackelem *stack, char *str);
 void stack_add_elem(stackelem *stack, stackelem *element);
+int stack_store_elem(stackelem *stack, stackelem *element, int store_to);
 
 stackelem *create_stackelem(int value, char *string);
 stackelem *stack_pop(stackelem *a);

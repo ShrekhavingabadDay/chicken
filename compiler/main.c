@@ -74,40 +74,47 @@ OPCODE next_opcode(stackelem **current_opcode){
     return (*current_opcode)->value;
 }
 
+int mult(int a, int b){
+    return a*b;
+}
+
+int add(int a, int b){
+    return a+b;
+}
+
+int sub(int a, int b){
+    return b-a;
+}
+
+int divide(int a, int b){
+    return b/a;
+}
+
+/*
+    a "mother" function to all arithmetic operations on stack,
+    beacause all follow the same pattern when getting values from the stack
+*/
+void arithmetic_op(stackelem *v, int (*op)(int, int) ){
+    
+    stackelem *s_a = stack_pop(v);
+    stackelem *s_b = stack_pop(v);
+
+    int a = s_a->value;
+    int b = s_b->value;
+
+    free(s_a);
+    free(s_b);
+
+    stack_push(v, op(a,b) );
+
+}
+
 void chicken_op(stackelem *v){
     stack_push_string(v, "chicken");
 }
 
-void add_op(stackelem *v){
-    stackelem *s_a = stack_pop(v);
-    stackelem *s_b = stack_pop(v);
-
-    // TODO #1: do typechecking instead of naive approach
-    int a = s_a->value;
-    int b = s_b->value;
-
-    free(s_a);
-    free(s_b);
-
-    stack_push(v, a+b);
-}
-
 void ten_or_more_op(stackelem *v, int amount){
     stack_push(v, amount-OFFSET);
-}
-
-void subtract_op(stackelem *v){
-    stackelem *s_a = stack_pop(v);
-    stackelem *s_b = stack_pop(v);
-
-    // TODO #1: do typechecking instead of naive approach
-    int a = s_a->value;
-    int b = s_b->value;
-
-    free(s_a);
-    free(s_b);
-    
-    stack_push(v, b-a);
 }
 
 // double-wide instructions get current_opcode pointer as argument
@@ -128,6 +135,19 @@ void load_op(main_stack *ms, stackelem *current_opcode){
         stack_push(ms->stack, ms->user_input[index]);
 }
 
+void store_op(stackelem *stack){
+
+    stackelem *s_index = stack_pop(stack);
+    int index = s_index->value;
+    free(s_index);
+
+    stackelem *to_store = stack_pop(stack);
+
+    // TODO: handle possible errors
+    int result = stack_store_elem(stack, to_store, index);
+
+}
+
 int compile(stackelem *code_segment, char *user_input){
 
     main_stack ms;
@@ -144,33 +164,37 @@ int compile(stackelem *code_segment, char *user_input){
 
         switch (opcode) {
 
+            case FOX:
+                arithmetic_op(ms.stack, sub);
+                break;
+
             case ADD:
-                // printf("ADD operation\n");
-                add_op(ms.stack);
+                arithmetic_op(ms.stack, add);
+                break;
+            
+            case ROOSTER:
+                arithmetic_op(ms.stack, mult);
                 break;
 
             case CHICKEN:
-                // printf("CHICKEN operation\n");
                 chicken_op(ms.stack);
                 break;
 
             case PICK:
-                // printf("PICK operation\n");
                 load_op(&ms, current_opcode);
                 break;
 
+            case PECK:
+                store_op(ms.stack);
+                break;
+
             default:
-                // printf("TENORMORE operation\n");
                 ten_or_more_op(ms.stack, opcode);
                 break;
 
         }
         opcode = next_opcode(&current_opcode);
-
-        // print_stack(ms.stack);
-        /* debugging: breaking on every instruction, because cat enters infinite loop
-        char debug;
-        scanf("%c", &debug);*/      
+    
     }
 
     stackelem *top_of_stack = stack_peek(ms.stack);
