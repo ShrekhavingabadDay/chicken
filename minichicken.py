@@ -38,7 +38,7 @@ def main():
         if os.path.exists(filename):
             with open(filename, "r") as f:
                 with open(filename_no_ext + ".chicken", "w") as target_f:
-                    target_f.write(chicken_to_minichicken(f.read()))
+                    target_f.write(minichicken_to_chicken(f.read()))
         else:
             print("File " + filename + " does not exist!\n")
 
