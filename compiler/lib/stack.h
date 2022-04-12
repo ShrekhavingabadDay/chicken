@@ -1,8 +1,8 @@
 #ifndef STACK
 #define STACK
 
-#include<stdlib.h>
-#include<string.h>
+#include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #include "error.h"
 

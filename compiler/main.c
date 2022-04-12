@@ -60,6 +60,7 @@ stackelem *tokenize(char *filename){
 		}
         prev = c;
     }while(!feof(input));
+    stack_push(stack, chickens);
 
     stack_push(stack, AXE);
 
@@ -148,6 +149,31 @@ void store_op(stackelem *stack){
 
 }
 
+void jump_op(stackelem *stack, stackelem **current_opcode) {
+
+    stackelem *s_offset = stack_pop(stack);
+    stackelem *s_condition = stack_pop(stack);
+
+    int offset = s_offset->value;
+    free(s_condition);
+
+    if (s_condition->value) {
+        for (int i = 0; i<offset; i++)
+            *current_opcode = (*current_opcode) -> next;
+    }
+    free(s_offset);
+}
+
+void char_op(stackelem *stack){
+    stackelem *s_token = stack_pop(stack);
+
+    int token = s_token->value;
+
+    free(s_token);
+
+    stack_push(stack, token);
+}
+
 int compile(stackelem *code_segment, char *user_input){
 
     main_stack ms;
@@ -188,6 +214,14 @@ int compile(stackelem *code_segment, char *user_input){
                 store_op(ms.stack);
                 break;
 
+            case FR:
+                jump_op(ms.stack, &current_opcode);
+                break;
+
+            case BBQ:
+                char_op(ms.stack);
+                break;
+
             default:
                 ten_or_more_op(ms.stack, opcode);
                 break;
@@ -195,6 +229,7 @@ int compile(stackelem *code_segment, char *user_input){
         }
         opcode = next_opcode(&current_opcode);
     
+        print_stack(ms.);
     }
 
     stackelem *top_of_stack = stack_peek(ms.stack);
