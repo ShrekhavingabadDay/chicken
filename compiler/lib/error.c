@@ -4,6 +4,6 @@
 // TODO: colors in terminal
 
 void show_error(error *e){
-    printf("%s: %s\n", e->origin, e->message);
+    printf("ERROR: %s: %s\n", e->origin, e->message);
     free(e);
 }

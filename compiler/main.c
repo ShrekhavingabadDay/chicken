@@ -4,9 +4,6 @@
 // length of the string "chicken"
 #define CHN_LEN 7
 
-// subtract this to get value that needs to get pushed onto the stack
-#define OFFSET 10
-
 typedef enum {
     AXE, // exit
     CHICKEN, // prints chicken
@@ -23,6 +20,7 @@ typedef enum {
 typedef struct {
     stackelem *self; // pointer to the main program stack
     stackelem *stack; // pointer to rest of stack
+    stackelem *used; // pointer to stack the program uses
     char *user_input; // pointer to user input
 } main_stack;
 
@@ -115,7 +113,7 @@ void chicken_op(stackelem *v){
 }
 
 void ten_or_more_op(stackelem *v, int amount){
-    stack_push(v, amount-OFFSET);
+    stack_push(v, amount-10);
 }
 
 // double-wide instructions get current_opcode pointer as argument
@@ -181,6 +179,7 @@ int compile(stackelem *code_segment, char *user_input){
     ms.user_input = user_input;
     ms.stack = code_segment;
     ms.stack = stack_push_back_string(code_segment, user_input);
+    ms.used = stack_peek(ms.stack); // going to contain trailing EXIT instruction
     ms.self = ms.stack;
 
     stackelem *current_opcode = stack_get(ms.stack, 1);
@@ -191,45 +190,65 @@ int compile(stackelem *code_segment, char *user_input){
         switch (opcode) {
 
             case FOX:
+		// DEBUG
+		printf("subtracting\n");
                 arithmetic_op(ms.stack, sub);
                 break;
 
             case ADD:
+		// DEBUG
+		printf("adding\n");
                 arithmetic_op(ms.stack, add);
                 break;
             
             case ROOSTER:
+		// DEBUG
+		printf("multiplying\n");
                 arithmetic_op(ms.stack, mult);
                 break;
 
-            case CHICKEN:
+	    case CHICKEN:
+		// DEBUG
+		printf("©hicken\n");
                 chicken_op(ms.stack);
                 break;
 
             case PICK:
+		// DEBUG
+		printf("loading\n");
                 load_op(&ms, current_opcode);
                 break;
 
             case PECK:
+		// DEBUG
+		printf("storing\n");
                 store_op(ms.stack);
                 break;
 
             case FR:
+		// DEBUG
+		printf("jumping\n");
                 jump_op(ms.stack, &current_opcode);
                 break;
 
             case BBQ:
+		// DEBUG
+		printf("pushing character\n");
                 char_op(ms.stack);
                 break;
 
             default:
+		// DEBUG
+		printf("pushing integer\n");
                 ten_or_more_op(ms.stack, opcode);
                 break;
 
         }
         opcode = next_opcode(&current_opcode);
     
-        print_stack(ms.);
+        print_stack(ms.used->next); //don't print the zero, we know it's there bruh
+	char car;
+	scanf("%c", &car); // wow this stops the programm
     }
 
     stackelem *top_of_stack = stack_peek(ms.stack);
