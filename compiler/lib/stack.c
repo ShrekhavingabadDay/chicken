@@ -10,29 +10,49 @@ void free_stack(stackelem *first){
 	while (first != NULL){
 		tmp = first;
 		first = first->next;
-        free(tmp);
+
+		if (tmp->value_type == STRING)
+			string_free(tmp->value.str);
+
+        	free(tmp);
 	}
 }
 
 void print_stack(stackelem *first){
 	stackelem *iter = first;
 	while (iter != NULL){
-        if (iter->string != NULL) printf("%s ", iter->string);
-        else printf("%d ", iter->value);
+		if (iter->value_type == STRING)
+			printf("%s ", iter->value.str);
+		else 
+			printf("%d ", iter->value.integer);
 		iter = iter->next;
 	}
-    printf("\n");
+    	printf("\n");
 }
 
-stackelem *create_stackelem(int value, char *string){
+stackelem *create_int_stackelem(int value){
+
     stackelem *new = (stackelem*) malloc(sizeof(stackelem));
-    new->value = value;
-    new->string = string;
+
+    new->value_type = INTEGER;
+    new->value.integer = value;
     new->next = NULL;
+
     return new;
 }
 
-void stack_push(stackelem *first, int value){
+stackelem *create_string_stackelem(const char *value){
+
+    stackelem *new = (stackelem*) malloc(sizeof(stackelem));
+
+    new->value_type = STRING;
+    new->value.str = string_create(value);
+    new->next = NULL;
+
+    return new;
+}
+
+void stack_push_int(stackelem *first, int value){
 
     if (first==NULL) return;
 
@@ -40,40 +60,41 @@ void stack_push(stackelem *first, int value){
     while ( iter->next != NULL )
         iter = iter->next;
 
-    stackelem *new = create_stackelem(value, NULL);
+    stackelem *new = create_int_stackelem(value);
     iter->next = new;
     new->next = NULL;
 
 }
 
-stackelem *stack_push_back(stackelem *first, int value){
+stackelem *stack_push_back_int(stackelem *first, int value){
 
     if (first==NULL) return NULL;
 
-    stackelem *new = create_stackelem(value, NULL);
+    stackelem *new = create_int_stackelem(value);
     new->next = first;
     return new;
 }
 
-void stack_push_string(stackelem *first, char *str){
+void stack_push_string(stackelem *first, const char *value){
 
     if (first==NULL) return;
 
     stackelem *iter = first;
+
     while ( iter->next != NULL )
         iter = iter->next;
     
-    stackelem *new = create_stackelem(0, str);
+    stackelem *new = create_string_stackelem(value);
     iter->next = new;
     new->next = NULL;
 
 }
 
-stackelem *stack_push_back_string(stackelem *first, char *str){
+stackelem *stack_push_back_string(stackelem *first, const char *value){
 
     if (first==NULL) return NULL;
 
-    stackelem *new = create_stackelem(0, str);
+    stackelem *new = create_string_stackelem(value);
     new->next = first;
     return new;
 }
@@ -135,8 +156,10 @@ void stack_add_elem(stackelem *stack, stackelem *element){
 
     // iter->next = element;
     // element->next = NULL;
-    stackelem *to_add = create_stackelem(element->value, element->string);
-    iter->next = to_add;
+	stackelem *to_add = (element->value_type == STRING) ? 
+				create_string_stackelem(element->value.str) : 
+				create_int_stackelem(element->value.integer);
+
 }
 
 // int, so that we can handle errors more elegantly

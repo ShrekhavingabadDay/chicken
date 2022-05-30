@@ -51,16 +51,16 @@ stackelem *tokenize(char *filename){
 			if (prev != '\n') chickens++;
 
             if (stack == NULL)
-                stack = create_stackelem(chickens, NULL);
+                stack = create_int_stackelem(chickens);
             else
-			    stack_push(stack, chickens);
+			    stack_push_int(stack, chickens);
 			chickens = 0;
 		}
         prev = c;
     }while(!feof(input));
-    stack_push(stack, chickens);
+    stack_push_int(stack, chickens);
 
-    stack_push(stack, AXE);
+    stack_push_int(stack, AXE);
 
 	fclose(input);
 	return stack;
@@ -70,7 +70,7 @@ stackelem *tokenize(char *filename){
 
 OPCODE next_opcode(stackelem **current_opcode){
     *current_opcode = (*current_opcode)->next;
-    return (*current_opcode)->value;
+    return (*current_opcode)->value.integer;
 }
 
 int mult(int a, int b){
@@ -98,13 +98,13 @@ void arithmetic_op(stackelem *v, int (*op)(int, int) ){
     stackelem *s_a = stack_pop(v);
     stackelem *s_b = stack_pop(v);
 
-    int a = s_a->value;
-    int b = s_b->value;
+    int a = s_a->value.integer;
+    int b = s_b->value.integer;
 
     free(s_a);
     free(s_b);
 
-    stack_push(v, op(a,b) );
+    stack_push_int(v, op(a,b) );
 
 }
 
@@ -113,7 +113,7 @@ void chicken_op(stackelem *v){
 }
 
 void ten_or_more_op(stackelem *v, int amount){
-    stack_push(v, amount-10);
+    stack_push_int(v, amount-10);
 }
 
 // double-wide instructions get current_opcode pointer as argument
@@ -123,7 +123,7 @@ void load_op(main_stack *ms, stackelem *current_opcode){
     // DEBUG: printf("loading from: %d\n", load_from);
 
     stackelem *popped = stack_pop(ms->stack);
-    int index = popped->value;
+    int index = popped->value.integer;
     free(popped);
 
     // index-1 because the "first element of the stack" is a pointer to itself
@@ -131,13 +131,13 @@ void load_op(main_stack *ms, stackelem *current_opcode){
         stack_add_elem(ms->stack, stack_get(ms->stack, index-1));
 
     else
-        stack_push(ms->stack, ms->user_input[index]);
+        stack_push_string(ms->stack, &(ms->user_input[index]) );
 }
 
 void store_op(stackelem *stack){
 
     stackelem *s_index = stack_pop(stack);
-    int index = s_index->value;
+    int index = s_index->value.integer;
     free(s_index);
 
     stackelem *to_store = stack_pop(stack);
@@ -152,10 +152,10 @@ void jump_op(stackelem *stack, stackelem **current_opcode) {
     stackelem *s_offset = stack_pop(stack);
     stackelem *s_condition = stack_pop(stack);
 
-    int offset = s_offset->value;
+    int offset = s_offset->value.integer;
     free(s_condition);
 
-    if (s_condition->value) {
+    if (s_condition->value.integer) {
         for (int i = 0; i<offset; i++)
             *current_opcode = (*current_opcode) -> next;
     }
@@ -165,11 +165,11 @@ void jump_op(stackelem *stack, stackelem **current_opcode) {
 void char_op(stackelem *stack){
     stackelem *s_token = stack_pop(stack);
 
-    int token = s_token->value;
+    int token = s_token->value.integer;
 
     free(s_token);
 
-    stack_push(stack, token);
+    stack_push_int(stack, token);
 }
 
 int compile(stackelem *code_segment, char *user_input){
@@ -183,7 +183,7 @@ int compile(stackelem *code_segment, char *user_input){
     ms.self = ms.stack;
 
     stackelem *current_opcode = stack_get(ms.stack, 1);
-    OPCODE opcode = current_opcode->value;
+    OPCODE opcode = current_opcode->value.integer;
 
     while (opcode != AXE){
 
@@ -253,10 +253,10 @@ int compile(stackelem *code_segment, char *user_input){
 
     stackelem *top_of_stack = stack_peek(ms.stack);
 
-    if (top_of_stack->string != NULL){
-        printf("%s\n", top_of_stack->string);
+    if (top_of_stack->value_type == STRING){
+        printf("%s\n", top_of_stack->value.str);
     } else {
-        printf("%d\n", top_of_stack->value);
+        printf("%d\n", top_of_stack->value.integer);
     }
 
     free_stack(ms.self);
