@@ -18,13 +18,44 @@ void free_stack(stackelem *first){
 	}
 }
 
+char *value_name(VALUE_TYPE t){
+	switch (t) {
+		case INTEGER:
+			return "int";
+			break;
+		case STRING:
+			return "str";
+			break;
+		case POINTER:
+			return "ptr";
+			break;
+		default:
+			return "<unknown>";
+	}
+}
+
+void print_stackelem(stackelem *e){
+	switch (e->value_type){
+		case STRING:
+			printf("%s ", e->value.str);
+			break;
+		case INTEGER:
+			printf("%d ", e->value.integer);
+			break;
+		case POINTER:
+			printf("%p ", e->value.pointer);
+			break;
+		default:
+			printf("<unknown type> ");
+
+	}
+	printf("(%s) ", value_name(e->value_type) );
+}
+
 void print_stack(stackelem *first){
 	stackelem *iter = first;
 	while (iter != NULL){
-		if (iter->value_type == STRING)
-			printf("%s ", iter->value.str);
-		else 
-			printf("%d ", iter->value.integer);
+		print_stackelem(iter);
 		iter = iter->next;
 	}
     	printf("\n");
@@ -47,6 +78,17 @@ stackelem *create_string_stackelem(const char *value){
 
     new->value_type = STRING;
     new->value.str = string_create(value);
+    new->next = NULL;
+
+    return new;
+}
+
+stackelem *create_pointer_stackelem(stackelem *value){
+
+    stackelem *new = (stackelem*) malloc(sizeof(stackelem));
+
+    new->value_type = POINTER;
+    new->value.pointer = value;
     new->next = NULL;
 
     return new;
@@ -99,6 +141,30 @@ stackelem *stack_push_back_string(stackelem *first, const char *value){
     return new;
 }
 
+/* void stack_push_pointer(stackelem *first, stackelem *value){
+
+    if (first==NULL) return;
+
+    stackelem *iter = first;
+
+    while ( iter->next != NULL )
+        iter = iter->next;
+    
+    stackelem *new = create_pointer_stackelem(value);
+    iter->next = new;
+    new->next = NULL;
+
+} */
+
+stackelem *stack_push_back_pointer(stackelem *first, stackelem *value){
+
+    if (first==NULL) return NULL;
+
+    stackelem *new = create_pointer_stackelem(value);
+    new->next = first;
+    return new;
+}
+
 stackelem *stack_pop(stackelem *first){
     stackelem *iter = first;
     stackelem *prev = NULL;
@@ -113,10 +179,8 @@ stackelem *stack_pop(stackelem *first){
 
 stackelem *stack_get(stackelem* first, int index){
 
-    // cannot get anything below one:
     if (index < 0) return NULL;
 
-    /* the stack enumeration in chicken starts from index 1 */
     int i = 0;
     stackelem *iter = first;
     while (iter->next != NULL && i < index){
@@ -156,9 +220,24 @@ void stack_add_elem(stackelem *stack, stackelem *element){
 
     // iter->next = element;
     // element->next = NULL;
-	stackelem *to_add = (element->value_type == STRING) ? 
-				create_string_stackelem(element->value.str) : 
-				create_int_stackelem(element->value.integer);
+	stackelem *to_add;
+
+	switch (element->value_type){
+		case INTEGER:
+			to_add = create_string_stackelem(element->value.str);
+			break;
+		case STRING:
+			to_add = create_int_stackelem(element->value.integer);
+			break;
+		case POINTER:
+			to_add = create_pointer_stackelem(element->value.pointer);
+			break;
+		default:
+			to_add = NULL;
+	}
+
+	iter->next = to_add;
+	printf("elem added\n");
 
 }
 
