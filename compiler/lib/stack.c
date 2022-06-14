@@ -224,10 +224,10 @@ void stack_add_elem(stackelem *stack, stackelem *element){
 
 	switch (element->value_type){
 		case INTEGER:
-			to_add = create_string_stackelem(element->value.str);
+			to_add = create_int_stackelem(element->value.integer);
 			break;
 		case STRING:
-			to_add = create_int_stackelem(element->value.integer);
+			to_add = create_string_stackelem(element->value.str);
 			break;
 		case POINTER:
 			to_add = create_pointer_stackelem(element->value.pointer);
