@@ -66,8 +66,50 @@ int mult(int a, int b){
         return a*b;
 }
 
-int add(int a, int b){
-        return a+b;
+/* we need to be able to add two strings together,
+   so add won't be called by the "arithmetic_op" wrapper function
+*/
+void add_strings(stackelem *v, stackelem *s_a, stackelem *s_b){
+
+	string a = s_a->value.str;
+	string b = s_b->value.str;
+
+	free(s_a);
+	free(s_b);
+
+	string_add(&a, b);
+	stack_push_string(v, a);
+
+}
+
+void add_integers(stackelem *v, stackelem *s_a, stackelem *s_b){
+
+	int a = s_a->value.integer;
+	int b = s_b->value.integer;
+
+	free(s_a);
+	free(s_b);
+
+	stack_push_int(v, a+b);
+
+}
+
+void add_arithmetic(stackelem *v){
+	
+	stackelem *s_a = stack_pop(v);
+	stackelem *s_b = stack_pop(v);
+
+	if (
+	s_a->value_type == INTEGER &&
+	s_b->value_type == INTEGER
+	)
+		add_integers(v, s_a, s_b);
+	else if (
+	s_a->value_type == STRING &&
+	s_b->value_type == STRING
+	)
+		add_strings(v, s_a, s_b);
+
 }
 
 int sub(int a, int b){
@@ -172,8 +214,10 @@ void char_op(stackelem *stack){
 
         free(s_token);
 
-	char char_token=token+'0';
-        stack_push_string(stack, &(char_token) );
+	char char_token = token;
+	printf("Pushing char %c\n", char_token);
+
+        stack_push_char( stack, char_token );
 }
 
 int compile(stackelem *code_segment, char *user_input){
@@ -221,7 +265,7 @@ int compile(stackelem *code_segment, char *user_input){
 				/* DEBUG
 				printf("adding\n");
 				*/
-                                arithmetic_op(main_stack, add);
+                                add_arithmetic(main_stack);
                                 break;
                         
                         case ROOSTER:

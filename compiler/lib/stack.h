@@ -30,6 +30,7 @@ void free_stack(stackelem *a);
 
 void stack_push_int(stackelem *a, int value);
 void stack_push_string(stackelem *stack, const char *value);
+void stack_push_char(stackelem *first, const char c);
 
 stackelem *stack_push_back_int(stackelem *s, int value);
 stackelem *stack_push_back_string(stackelem *stack, const char *value);

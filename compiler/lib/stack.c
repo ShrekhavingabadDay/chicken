@@ -83,6 +83,21 @@ stackelem *create_string_stackelem(const char *value){
     return new;
 }
 
+stackelem *create_char_stackelem(const char value){
+
+	stackelem *new = (stackelem*) malloc(sizeof(stackelem));
+
+	new->value_type = STRING;
+
+	string s = string_create(NULL);
+	string_add_char(&s, value);
+
+	new->value.str = s;
+	new->next = NULL;
+
+	return new;
+}
+
 stackelem *create_pointer_stackelem(stackelem *value){
 
     stackelem *new = (stackelem*) malloc(sizeof(stackelem));
@@ -117,6 +132,8 @@ stackelem *stack_push_back_int(stackelem *first, int value){
     return new;
 }
 
+// TODO: There's a lot of code repetition :(
+// aaand i'm pretty sure that stack_peek does what I do in these functions
 void stack_push_string(stackelem *first, const char *value){
 
     if (first==NULL) return;
@@ -130,6 +147,19 @@ void stack_push_string(stackelem *first, const char *value){
     iter->next = new;
     new->next = NULL;
 
+}
+
+void stack_push_char(stackelem *first, const char value){
+	if (first == NULL) return;
+
+	stackelem *iter = first;
+
+	while ( iter->next != NULL )
+		iter = iter->next;
+
+	stackelem *new = create_char_stackelem(value);
+	iter->next = new;
+	new->next = NULL;
 }
 
 stackelem *stack_push_back_string(stackelem *first, const char *value){
