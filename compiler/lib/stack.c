@@ -49,16 +49,17 @@ void print_stackelem(stackelem *e){
 			printf("<unknown type> ");
 
 	}
-	printf("(%s) ", value_name(e->value_type) );
+	// printf("(%s) ", value_name(e->value_type) );
 }
 
 void print_stack(stackelem *first){
+	printf("[ ");
 	stackelem *iter = first;
 	while (iter != NULL){
 		print_stackelem(iter);
 		iter = iter->next;
 	}
-    	printf("\n");
+    	printf("]\n");
 }
 
 stackelem *create_int_stackelem(int value){

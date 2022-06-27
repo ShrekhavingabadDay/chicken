@@ -47,7 +47,7 @@ stackelem *tokenize(char *filename){
 		}
                 prev = c;
         }while(!feof(input));
-        stack_push_int(stack, chickens);
+        // stack_push_int(stack, chickens);
 
         stack_push_int(stack, AXE);
 
@@ -152,10 +152,13 @@ void ten_or_more_op(stackelem *v, int amount){
         stack_push_int(v, amount-10);
 }
 
-// double-wide instructions get current_opcode pointer as argument
-void load_op(stackelem *stack, stackelem *current_opcode){
+/* 
+   epic bugfix: load_op takes **opcode instead of *opcode
+   for ( by now ) obvious reasons
+*/
+void load_op(stackelem *stack, stackelem **current_opcode){
 
-        int load_from = next_opcode(&current_opcode);
+        int load_from = next_opcode(current_opcode);
 
         /* DEBUG:
         printf("loading from: %s\n", (load_from ? "user input" : "stack") );
@@ -191,6 +194,12 @@ void store_op(stackelem *stack){
 
 }
 
+/* TODO: jump in negative direction
+   - doubly linked list?
+   - store head and tail in a struct?
+   - ^that's still a surprisingly huge amount of coding
+   wasn't anticipating it when i started :O
+*/
 void jump_op(stackelem *stack, stackelem **current_opcode) {
 
         stackelem *s_offset = stack_pop(stack);
@@ -215,7 +224,7 @@ void char_op(stackelem *stack){
         free(s_token);
 
 	char char_token = token;
-	printf("Pushing char %c\n", char_token);
+	// printf("Pushing char %c\n", char_token);
 
         stack_push_char( stack, char_token );
 }
@@ -224,7 +233,7 @@ int compile(stackelem *code_segment, char *user_input){
 
         stackelem* main_stack;
 	stackelem *data_segment = stack_peek(code_segment);
-   
+
         /* [ ] */
         main_stack = code_segment;
         /* 	|
@@ -242,8 +251,10 @@ int compile(stackelem *code_segment, char *user_input){
 	        V
          * [ [...], 'user input', code ] */
 
-        /* changing the first elements pointer to point to itself
-	   this way we'll actually have a "pythonic" stackpointer as the first element
+        /* 
+	   changing the first elements pointer to point to itself
+	   this way we'll actually have a pointer to self as the first element
+	   (just like in python)
 	*/
         stack_get(main_stack, 0)->value.pointer = main_stack;
 
@@ -255,72 +266,72 @@ int compile(stackelem *code_segment, char *user_input){
                 switch (opcode) {
 
                         case FOX:
-				/* DEBUG
+				/* DEBUG */
 				printf("subtracting\n");
-				*/
+				/**/
                                 arithmetic_op(main_stack, sub);
                                 break;
 
                         case ADD:
-				/* DEBUG
+				/* DEBUG */
 				printf("adding\n");
-				*/
+				/**/
                                 add_arithmetic(main_stack);
                                 break;
                         
                         case ROOSTER:
-				/* DEBUG
+				/* DEBUG */
 				printf("multiplying\n");
-				*/
+				/**/
                                 arithmetic_op(main_stack, mult);
                                 break;
 
 	        	case CHICKEN:
-				/* DEBUG
+				/* DEBUG */
 				printf("chicken\n");
-				*/
+				/**/
                                 chicken_op(main_stack);
                                 break;
 
                         case PICK:
-				/* DEBUG
+				/* DEBUG */
 				printf("loading\n");
-				*/
-                                load_op(main_stack, current_opcode);
+				/**/
+                                load_op(main_stack, &current_opcode);
                                 break;
 
                         case PECK:
-				/* DEBUG
+				/* DEBUG */
 				printf("storing\n");
-				*/
+				/**/
                                 store_op(main_stack);
                                 break;
 
                         case FR:
-				/* DEBUG
+				/* DEBUG */
 				printf("jumping\n");
-				*/
+				/**/
                                 jump_op(main_stack, &current_opcode);
                                 break;
 
                         case BBQ:
-				/* DEBUG
+				/* DEBUG */
 				printf("pushing character\n");
-				*/
+				/**/
                                 char_op(main_stack);
                                 break;
 
                         default:
-				/* DEBUG
+				/* DEBUG */
 				printf("pushing integer\n");
-				*/
+				/**/
                                 ten_or_more_op(main_stack, opcode);
                                 break;
 
                 }
                 opcode = next_opcode(&current_opcode);
-        
-                print_stack(data_segment);
+       
+                print_stack(data_segment->next);
 		char car;
 		scanf("%c", &car); // wow this stops the programm
         }
