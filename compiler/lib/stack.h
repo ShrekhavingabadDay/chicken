@@ -24,6 +24,7 @@ typedef struct _stackelem {
     VALUE_TYPE value_type; 
     STACK_VALUE value;
     struct _stackelem *next;
+    struct _stackelem *prev;
 } stackelem;
 
 void free_stack(stackelem *a);

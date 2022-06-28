@@ -77,8 +77,9 @@ void add_strings(stackelem *v, stackelem *s_a, stackelem *s_b){
 	free(s_a);
 	free(s_b);
 
-	string_add(&a, b);
-	stack_push_string(v, a);
+	string_add(&b, a);
+	stack_push_string(v, b);
+	string_free(a);
 
 }
 
@@ -209,8 +210,15 @@ void jump_op(stackelem *stack, stackelem **current_opcode) {
         free(s_offset);
 
         if (s_condition->value.integer) {
-                for (int i = 0; i<offset; i++)
-                        *current_opcode = (*current_opcode) -> next;
+
+		if (offset<0){
+			offset = offset*(-1);
+			for (int i = 0; i<offset; i++)
+				*current_opcode = (*current_opcode)->prev;
+		}else
+
+                	for (int i = 0; i<offset; i++)
+                        	*current_opcode = (*current_opcode) -> next;
         }
         free(s_condition);
 }
@@ -267,63 +275,63 @@ int compile(stackelem *code_segment, char *user_input){
 
                         case FOX:
 				/* DEBUG */
-				printf("subtracting\n");
+				// printf("subtracting\n");
 				/**/
                                 arithmetic_op(main_stack, sub);
                                 break;
 
                         case ADD:
 				/* DEBUG */
-				printf("adding\n");
+				// printf("adding\n");
 				/**/
                                 add_arithmetic(main_stack);
                                 break;
                         
                         case ROOSTER:
 				/* DEBUG */
-				printf("multiplying\n");
+				// printf("multiplying\n");
 				/**/
                                 arithmetic_op(main_stack, mult);
                                 break;
 
 	        	case CHICKEN:
 				/* DEBUG */
-				printf("chicken\n");
+				// printf("chicken\n");
 				/**/
                                 chicken_op(main_stack);
                                 break;
 
                         case PICK:
 				/* DEBUG */
-				printf("loading\n");
+				// printf("loading\n");
 				/**/
                                 load_op(main_stack, &current_opcode);
                                 break;
 
                         case PECK:
 				/* DEBUG */
-				printf("storing\n");
+				// printf("storing\n");
 				/**/
                                 store_op(main_stack);
                                 break;
 
                         case FR:
 				/* DEBUG */
-				printf("jumping\n");
+				// printf("jumping\n");
 				/**/
                                 jump_op(main_stack, &current_opcode);
                                 break;
 
                         case BBQ:
 				/* DEBUG */
-				printf("pushing character\n");
+				// printf("pushing character\n");
 				/**/
                                 char_op(main_stack);
                                 break;
 
                         default:
 				/* DEBUG */
-				printf("pushing integer\n");
+				// printf("pushing integer\n");
 				/**/
                                 ten_or_more_op(main_stack, opcode);
                                 break;
@@ -331,9 +339,9 @@ int compile(stackelem *code_segment, char *user_input){
                 }
                 opcode = next_opcode(&current_opcode);
        
-                print_stack(data_segment->next);
-		char car;
-		scanf("%c", &car); // wow this stops the programm
+                //print_stack(data_segment->next);
+		//char car;
+		//scanf("%c", &car); // wow this stops the programm
         }
 
         stackelem *top_of_stack = stack_peek(main_stack);

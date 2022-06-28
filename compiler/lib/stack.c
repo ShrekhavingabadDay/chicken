@@ -69,6 +69,7 @@ stackelem *create_int_stackelem(int value){
     new->value_type = INTEGER;
     new->value.integer = value;
     new->next = NULL;
+    new->prev = NULL;
 
     return new;
 }
@@ -80,6 +81,7 @@ stackelem *create_string_stackelem(const char *value){
     new->value_type = STRING;
     new->value.str = string_create(value);
     new->next = NULL;
+    new->prev = NULL;
 
     return new;
 }
@@ -95,6 +97,7 @@ stackelem *create_char_stackelem(const char value){
 
 	new->value.str = s;
 	new->next = NULL;
+    	new->prev = NULL;
 
 	return new;
 }
@@ -106,6 +109,7 @@ stackelem *create_pointer_stackelem(stackelem *value){
     new->value_type = POINTER;
     new->value.pointer = value;
     new->next = NULL;
+    new->prev = NULL;
 
     return new;
 }
@@ -120,6 +124,7 @@ void stack_push_int(stackelem *first, int value){
 
     stackelem *new = create_int_stackelem(value);
     iter->next = new;
+    new->prev  = iter;
     new->next = NULL;
 
 }
@@ -130,6 +135,7 @@ stackelem *stack_push_back_int(stackelem *first, int value){
 
     stackelem *new = create_int_stackelem(value);
     new->next = first;
+    new->prev  = NULL;
     return new;
 }
 
@@ -146,6 +152,7 @@ void stack_push_string(stackelem *first, const char *value){
     
     stackelem *new = create_string_stackelem(value);
     iter->next = new;
+    new->prev  = iter;
     new->next = NULL;
 
 }
@@ -160,15 +167,18 @@ void stack_push_char(stackelem *first, const char value){
 
 	stackelem *new = create_char_stackelem(value);
 	iter->next = new;
+    	new->prev  = iter;
 	new->next = NULL;
 }
 
 stackelem *stack_push_back_string(stackelem *first, const char *value){
 
-    if (first==NULL) return NULL;
+	// why was this here?
+    // if (first==NULL) return NULL;
 
     stackelem *new = create_string_stackelem(value);
     new->next = first;
+    new->prev = NULL; 
     return new;
 }
 
@@ -193,6 +203,7 @@ stackelem *stack_push_back_pointer(stackelem *first, stackelem *value){
 
     stackelem *new = create_pointer_stackelem(value);
     new->next = first;
+    new->prev= NULL;
     return new;
 }
 
@@ -268,7 +279,6 @@ void stack_add_elem(stackelem *stack, stackelem *element){
 	}
 
 	iter->next = to_add;
-	printf("elem added\n");
 
 }
 
