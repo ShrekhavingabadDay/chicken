@@ -1,5 +1,5 @@
 pipi: lib/stack.o lib/error.o lib/str.o
-	cc -o csirke *.c lib/*.o
+	cc -o csirke.out *.c lib/*.o
 
 string.o: lib/str.c lib/str.h
 	cc -c lib/str.c -o lib/str.o

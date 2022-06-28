@@ -18,6 +18,40 @@ typedef enum {
         BBQ      // pushes character as ascii
 } OPCODE;
 
+// https://stackoverflow.com/questions/27097915/read-all-data-from-stdin-c
+char* read_stdin()
+{
+    int c;
+    size_t p4kB = 4096, i = 0;
+    void *newPtr = NULL;
+    char *ptrString = malloc(p4kB * sizeof (char));
+
+    while (ptrString != NULL && (c = getchar()) != '\n' && c != EOF)
+    {
+        if (i == p4kB * sizeof (char))
+        {
+            p4kB += 4096;
+            if ((newPtr = realloc(ptrString, p4kB * sizeof (char))) != NULL)
+                ptrString = (char*) newPtr;
+            else
+            {
+                free(ptrString);
+                return NULL;
+            }
+        }
+        ptrString[i++] = c;
+    }
+
+    if (ptrString != NULL)
+    {
+        ptrString[i] = '\0';
+        ptrString = realloc(ptrString, strlen(ptrString) + 1);
+    } 
+    else return NULL;
+
+    return ptrString;
+}
+
 // TODO: make tokenizer ( a lot ) more sophisticated
 stackelem *tokenize(char *filename){
 
@@ -367,11 +401,13 @@ int main(int argc, char *argv[]){
                 printf("%s does not exist!\n", file);
                 return 1;
         }
+	
 
-        if (argc >= 3)
+	if (argc >= 3)
                 compile(program_segment, argv[2]);
         else
-                compile(program_segment, NULL);
+                compile(program_segment, read_stdin());
+
 
 	return 0;
 }
