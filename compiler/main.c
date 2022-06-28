@@ -383,6 +383,7 @@ int compile(stackelem *code_segment, char *user_input){
 	print_stackelem(top_of_stack);
 
         free_stack(main_stack);
+	//free(user_input);
 
         return 0;
 }
@@ -403,10 +404,13 @@ int main(int argc, char *argv[]){
         }
 	
 
-	if (argc >= 3)
+	/*if (argc >= 3)
                 compile(program_segment, argv[2]);
-        else
-                compile(program_segment, read_stdin());
+        else*/
+	if ((fseek(stdin, 0, SEEK_END), ftell(stdin)) > 0)
+        	compile(program_segment, read_stdin());
+	else
+		compile(program_segment, NULL);
 
 
 	return 0;
