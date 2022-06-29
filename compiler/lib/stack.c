@@ -37,13 +37,13 @@ char *value_name(VALUE_TYPE t){
 void print_stackelem(stackelem *e){
 	switch (e->value_type){
 		case STRING:
-			printf("%s ", e->value.str);
+			printf("%s, ", e->value.str);
 			break;
 		case INTEGER:
-			printf("%d ", e->value.integer);
+			printf("%d, ", e->value.integer);
 			break;
 		case POINTER:
-			printf("%p ", e->value.pointer);
+			printf("%p, ", e->value.pointer);
 			break;
 		default:
 			printf("<unknown type> ");
@@ -283,6 +283,7 @@ void stack_add_elem(stackelem *stack, stackelem *element){
 }
 
 // int, so that we can handle errors more elegantly
+// i think 99 chickens might fail because i solved storing with pointers only instead of making a copy of the object. pretty sure it has the ability to fug thungs up
 int stack_store_elem(stackelem *stack, stackelem *element, int store_to){
     stackelem *prev;
     stackelem *current;

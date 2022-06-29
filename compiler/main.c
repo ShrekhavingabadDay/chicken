@@ -1,4 +1,5 @@
 #include "lib/stack.h"
+#include "lib/error.h"
 #include <stdio.h>
 #include <unistd.h>
 
@@ -26,7 +27,7 @@ char* read_stdin()
     void *newPtr = NULL;
     char *ptrString = malloc(p4kB * sizeof (char));
 
-    while (ptrString != NULL && (c = getchar()) != '\n' && c != EOF)
+    while (ptrString != NULL && (c = getchar()) != EOF)
     {
         if (i == p4kB * sizeof (char))
         {
@@ -81,7 +82,6 @@ stackelem *tokenize(char *filename){
 		}
                 prev = c;
         }while(!feof(input));
-        // stack_push_int(stack, chickens);
 
         stack_push_int(stack, AXE);
 
@@ -309,63 +309,63 @@ int compile(stackelem *code_segment, char *user_input){
 
                         case FOX:
 				/* DEBUG */
-				// printf("subtracting\n");
+				printf("subtracting\n");
 				/**/
                                 arithmetic_op(main_stack, sub);
                                 break;
 
                         case ADD:
 				/* DEBUG */
-				// printf("adding\n");
+				printf("adding\n");
 				/**/
                                 add_arithmetic(main_stack);
                                 break;
                         
                         case ROOSTER:
 				/* DEBUG */
-				// printf("multiplying\n");
+				printf("multiplying\n");
 				/**/
                                 arithmetic_op(main_stack, mult);
                                 break;
 
 	        	case CHICKEN:
 				/* DEBUG */
-				// printf("chicken\n");
+				printf("chicken\n");
 				/**/
                                 chicken_op(main_stack);
                                 break;
 
                         case PICK:
 				/* DEBUG */
-				// printf("loading\n");
+				printf("loading\n");
 				/**/
                                 load_op(main_stack, &current_opcode);
                                 break;
 
                         case PECK:
 				/* DEBUG */
-				// printf("storing\n");
+				printf("storing\n");
 				/**/
                                 store_op(main_stack);
                                 break;
 
                         case FR:
 				/* DEBUG */
-				// printf("jumping\n");
+				printf("jumping\n");
 				/**/
                                 jump_op(main_stack, &current_opcode);
                                 break;
 
                         case BBQ:
 				/* DEBUG */
-				// printf("pushing character\n");
+				printf("pushing character\n");
 				/**/
                                 char_op(main_stack);
                                 break;
 
                         default:
 				/* DEBUG */
-				// printf("pushing integer\n");
+				printf("pushing integer\n");
 				/**/
                                 ten_or_more_op(main_stack, opcode);
                                 break;
@@ -373,9 +373,9 @@ int compile(stackelem *code_segment, char *user_input){
                 }
                 opcode = next_opcode(&current_opcode);
        
-                //print_stack(data_segment->next);
-		//char car;
-		//scanf("%c", &car); // wow this stops the programm
+                print_stack(data_segment->next);
+		char car;
+		scanf("%c", &car); // wow this stops the programm
         }
 
         stackelem *top_of_stack = stack_peek(main_stack);
@@ -407,7 +407,7 @@ int main(int argc, char *argv[]){
 	/*if (argc >= 3)
                 compile(program_segment, argv[2]);
         else*/
-	if ((fseek(stdin, 0, SEEK_END), ftell(stdin)) > 0)
+	if (!isatty(STDIN_FILENO))
         	compile(program_segment, read_stdin());
 	else
 		compile(program_segment, NULL);

@@ -3,11 +3,12 @@
 
 #include<stdlib.h>
 
-typedef struct {
-    char origin[10];
-    char message[50];
-} error;
+typedef enum {
+	SYNTAX,
+	OUT_OF_BOUNDS,
+	TYPE_MISMATCH,
+} ERROR_TYPE;
 
-void show_error(error *e);
+void show_error(ERROR_TYPE e, char *m);
 
 #endif
