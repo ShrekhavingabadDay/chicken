@@ -39,7 +39,7 @@ stackelem *stack_push_back_pointer(stackelem *stack, stackelem *value);
 
 void stack_add_elem(stackelem *stack, stackelem *element);
 
-int stack_store_elem(stackelem *stack, stackelem *element, int store_to);
+ERROR_TYPE stack_store_elem(stackelem *stack, stackelem *element, int store_to);
 
 stackelem *create_int_stackelem(int value);
 stackelem *create_string_stackelem(const char *value);
@@ -51,7 +51,7 @@ stackelem *stack_peek(stackelem *first);
 
 int stack_length(stackelem *a);
 
-void print_stackelem(stackelem *e);
+void print_stackelem(stackelem *e, char sep);
 
 void print_stack(stackelem *a);
 

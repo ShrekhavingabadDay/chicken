@@ -1,7 +1,9 @@
 #include "lib/stack.h"
 #include "lib/error.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 // length of the string "chicken"
 #define CHN_LEN 7
@@ -18,6 +20,44 @@ typedef enum {
         FR,      // jumps to specified position in specified stack
         BBQ      // pushes character as ascii
 } OPCODE;
+
+char* opcode_to_string(OPCODE o){
+	switch (o) {
+		case AXE:
+			return "AXE";
+		case CHICKEN:
+			return "CHICKEN";
+		case ADD:
+			return "ADD";
+		case FOX:
+			return "FOX";
+		case ROOSTER:
+			return "ROOSTER";
+		case COMPARE:
+			return "COMPARE";
+		case PICK:
+			return "PICK";
+		case PECK:
+			return "PECK";
+		case FR:
+			return "FR";
+		case BBQ:
+			return "BBQ";
+		default:
+			/*
+			chicken lore:
+
+			10+ operand *pushes* number onto stack
+					^
+			      chickens push eggs out of their cloaca
+					      ^
+				  this was my thought process
+
+			thanks for coming to my TED talk!
+			 */
+			return "EGG";
+	}
+}
 
 // https://stackoverflow.com/questions/27097915/read-all-data-from-stdin-c
 char* read_stdin()
@@ -53,11 +93,19 @@ char* read_stdin()
     return ptrString;
 }
 
-// TODO: make tokenizer ( a lot ) more sophisticated
+void parser_error(const char *buf, int row, int col){
+	show_syntax_error(buf, row, col);
+	exit(1);
+}
+
+// TODO fix this
 stackelem *tokenize(char *filename){
 
+	char buf[CHN_LEN+1];
+	char buf_index = 0;
+
 	FILE *input = fopen(filename, "r");
-        int row, col = 1;
+        int row = 1, col = 1;
 
         if (input == NULL)
                 return NULL;
@@ -68,17 +116,48 @@ stackelem *tokenize(char *filename){
         stackelem *stack = NULL;
 	do{
                 c = getc(input);
+		col++;
+		buf[buf_index++] = c;
+		for (int i = 0; i<buf_index; i++)
+			printf("%c", buf[i]);
+		printf("\n");
+		if (buf_index == CHN_LEN+2){
+			printf("too_much\n");
+			buf[CHN_LEN] = 0;
+			parser_error(buf, row, col);
+		}
 
-		if (c == ' ') chickens++;
+		if (c == ' ') {
+			printf("space\n");
+			chickens++;
+			buf[buf_index++] = '\0';
+			if (!strcmp("chicken", buf))
+				parser_error(buf, row, col);
+			while (buf_index){
+				buf_index--;
+				buf[buf_index] = 0;
+			}
+		}
 		else if (c == '\n'){
+			
 
-			if (prev != '\n') chickens++;
+			row++;
+			col = 0;
+
+			if (prev != '\n') {
+				chickens++;
+				while (buf_index){
+					buf[buf_index] = 0;
+					buf_index--;
+				}
+			}
 
                         if (stack == NULL)
                                 stack = create_int_stackelem(chickens);
                         else
 			        stack_push_int(stack, chickens);
 			chickens = 0;
+
 		}
                 prev = c;
         }while(!feof(input));
@@ -89,6 +168,13 @@ stackelem *tokenize(char *filename){
 	return stack;
 }
 
+void error_handler(ERROR_TYPE error_type, OPCODE instruction, stackelem *stack){
+	if (error_type == NONE) return;
+	show_error(error_type, opcode_to_string(instruction));
+	free_stack(stack);
+	exit(1);
+}
+
 /* ----- functions used at compilation ----- */
 
 OPCODE next_opcode(stackelem **current_opcode){
@@ -96,14 +182,28 @@ OPCODE next_opcode(stackelem **current_opcode){
         return (*current_opcode)->value.integer;
 }
 
+int of_same_type(stackelem *a, stackelem *b, VALUE_TYPE t){
+	return (
+		a->value_type == b->value_type &&
+		a->value_type == t
+	);
+}
+
 int mult(int a, int b){
         return a*b;
 }
 
-/* we need to be able to add two strings together,
-   so add won't be called by the "arithmetic_op" wrapper function
-*/
-void add_strings(stackelem *v, stackelem *s_a, stackelem *s_b){
+int sub(int a, int b){
+        return b-a;
+}
+
+int divide(int a, int b){
+        return b/a;
+}
+
+ERROR_TYPE add_strings(stackelem *v, stackelem *s_a, stackelem *s_b){
+
+	if (!of_same_type(s_a, s_b, STRING)) return TYPE_MISMATCH;
 
 	string a = s_a->value.str;
 	string b = s_b->value.str;
@@ -115,9 +215,13 @@ void add_strings(stackelem *v, stackelem *s_a, stackelem *s_b){
 	stack_push_string(v, b);
 	string_free(a);
 
+	return NONE;
+
 }
 
-void add_integers(stackelem *v, stackelem *s_a, stackelem *s_b){
+ERROR_TYPE add_integers(stackelem *v, stackelem *s_a, stackelem *s_b){
+
+	if (!of_same_type(s_a, s_b, INTEGER)) return TYPE_MISMATCH;
 
 	int a = s_a->value.integer;
 	int b = s_b->value.integer;
@@ -127,9 +231,10 @@ void add_integers(stackelem *v, stackelem *s_a, stackelem *s_b){
 
 	stack_push_int(v, a+b);
 
+	return NONE;
 }
 
-void add_arithmetic(stackelem *v){
+ERROR_TYPE add_arithmetic(stackelem *v){
 	
 	stackelem *s_a = stack_pop(v);
 	stackelem *s_b = stack_pop(v);
@@ -138,36 +243,22 @@ void add_arithmetic(stackelem *v){
 	s_a->value_type == INTEGER &&
 	s_b->value_type == INTEGER
 	)
-		add_integers(v, s_a, s_b);
+		return add_integers(v, s_a, s_b);
 	else if (
 	s_a->value_type == STRING &&
 	s_b->value_type == STRING
 	)
-		add_strings(v, s_a, s_b);
+		return add_strings(v, s_a, s_b);
 
+	return NONE;
 }
 
-int sub(int a, int b){
-        return b-a;
-}
-
-int divide(int a, int b){
-        return b/a;
-}
-
-/* TODO: handle possible errors:
-	- type mismatches
-	- indexing going out of bounds
-	- and the ones that i'll only find after it's too late
-*/
-
-/*
-        "godfather" function of all arithmetic operations
-*/
-void arithmetic_op(stackelem *v, int (*op)(int, int) ){
+ERROR_TYPE arithmetic_op(stackelem *v, int (*op)(int, int) ){
         
         stackelem *s_a = stack_pop(v);
         stackelem *s_b = stack_pop(v);
+
+	if (!of_same_type(s_a, s_b, INTEGER)) return TYPE_MISMATCH;
 
         int a = s_a->value.integer;
         int b = s_b->value.integer;
@@ -176,6 +267,8 @@ void arithmetic_op(stackelem *v, int (*op)(int, int) ){
         free(s_b);
 
         stack_push_int(v, op(a,b) );
+
+	return NONE;
 
 }
 
@@ -187,58 +280,48 @@ void ten_or_more_op(stackelem *v, int amount){
         stack_push_int(v, amount-10);
 }
 
-/* 
-   epic bugfix: load_op takes **opcode instead of *opcode
-   for ( by now ) obvious reasons
-*/
-void load_op(stackelem *stack, stackelem **current_opcode){
+ERROR_TYPE load_op(stackelem *stack, stackelem **current_opcode){
 
         int load_from = next_opcode(current_opcode);
 
-        /* DEBUG:
-        printf("loading from: %s\n", (load_from ? "user input" : "stack") );
-	*/
 
         stackelem *popped = stack_pop(stack);
+	if (popped->value_type != INTEGER) return TYPE_MISMATCH;
         int index = popped->value.integer;
         free(popped);
 
-	/* DEBUG
-        printf("loading element with index %d\n", index);
-	*/
 
         if (!load_from){ // loading from stack in this case
 		stackelem *pointer_to_self = stack_get(stack, 0)->value.pointer;
 		stackelem *to_add = stack_get( pointer_to_self, index );
+		if (to_add == NULL) return OUT_OF_BOUNDS;
                 stack_add_elem(stack, to_add );
         }
-	else{            // and from user input in this one
+	else             // and from user input in this one
                 stack_push_string(stack, &(( stack_get(stack, 1) )->value.str[index]) );
-        }
+	return NONE;
 }
 
-void store_op(stackelem *stack){
+ERROR_TYPE store_op(stackelem *stack){
 
         stackelem *s_index = stack_pop(stack);
+	if (s_index->value_type != INTEGER) return TYPE_MISMATCH;
         int index = s_index->value.integer;
         free(s_index);
 
         stackelem *to_store = stack_pop(stack);
 
-        int result = stack_store_elem(stack, to_store, index);
+        return stack_store_elem(stack, to_store, index);
 
 }
 
-/* TODO: jump in negative direction
-   - doubly linked list?
-   - store head and tail in a struct?
-   - ^that's still a surprisingly huge amount of coding
-   wasn't anticipating it when i started :O
-*/
-void jump_op(stackelem *stack, stackelem **current_opcode) {
+ERROR_TYPE jump_op(stackelem *stack, stackelem **current_opcode) {
 
         stackelem *s_offset = stack_pop(stack);
         stackelem *s_condition = stack_pop(stack);
+
+	if (s_offset->value_type != INTEGER ||
+	    s_condition->value_type != INTEGER) return TYPE_MISMATCH;
 
         int offset = s_offset->value.integer;
         free(s_offset);
@@ -247,28 +330,36 @@ void jump_op(stackelem *stack, stackelem **current_opcode) {
 
 		if (offset<0){
 			offset = offset*(-1);
-			for (int i = 0; i<offset; i++)
+			for (int i = 0; i<offset; i++){
+				if (current_opcode == NULL)
+					return OUT_OF_BOUNDS;
 				*current_opcode = (*current_opcode)->prev;
+			}
 		}else
-
-                	for (int i = 0; i<offset; i++)
+                	for (int i = 0; i<offset; i++){
+				if (current_opcode == NULL)
+					return OUT_OF_BOUNDS;
                         	*current_opcode = (*current_opcode) -> next;
+			}
         }
         free(s_condition);
+	return NONE;
 }
 
-void char_op(stackelem *stack){
+ERROR_TYPE char_op(stackelem *stack){
 
         stackelem *s_token = stack_pop(stack);
+	if (s_token->value_type != INTEGER) return TYPE_MISMATCH;
 
         int token = s_token->value.integer;
 
         free(s_token);
 
 	char char_token = token;
-	// printf("Pushing char %c\n", char_token);
 
         stack_push_char( stack, char_token );
+
+	return NONE;
 }
 
 int compile(stackelem *code_segment, char *user_input){
@@ -293,11 +384,6 @@ int compile(stackelem *code_segment, char *user_input){
 	        V
          * [ [...], 'user input', code ] */
 
-        /* 
-	   changing the first elements pointer to point to itself
-	   this way we'll actually have a pointer to self as the first element
-	   (just like in python)
-	*/
         stack_get(main_stack, 0)->value.pointer = main_stack;
 
         stackelem *current_opcode = stack_get(main_stack, 2);
@@ -305,85 +391,57 @@ int compile(stackelem *code_segment, char *user_input){
 
         while (opcode != AXE){
 
+		ERROR_TYPE err;
+
                 switch (opcode) {
 
                         case FOX:
-				/* DEBUG */
-				printf("subtracting\n");
-				/**/
-                                arithmetic_op(main_stack, sub);
+                                err = arithmetic_op(main_stack, sub);
                                 break;
 
                         case ADD:
-				/* DEBUG */
-				printf("adding\n");
-				/**/
-                                add_arithmetic(main_stack);
+                                err = add_arithmetic(main_stack);
                                 break;
                         
                         case ROOSTER:
-				/* DEBUG */
-				printf("multiplying\n");
-				/**/
-                                arithmetic_op(main_stack, mult);
+                                err = arithmetic_op(main_stack, mult);
                                 break;
 
 	        	case CHICKEN:
-				/* DEBUG */
-				printf("chicken\n");
-				/**/
                                 chicken_op(main_stack);
                                 break;
 
                         case PICK:
-				/* DEBUG */
-				printf("loading\n");
-				/**/
-                                load_op(main_stack, &current_opcode);
+                                err = load_op(main_stack, &current_opcode);
                                 break;
 
                         case PECK:
-				/* DEBUG */
-				printf("storing\n");
-				/**/
-                                store_op(main_stack);
+                                err = store_op(main_stack);
                                 break;
 
                         case FR:
-				/* DEBUG */
-				printf("jumping\n");
-				/**/
-                                jump_op(main_stack, &current_opcode);
+                                err = jump_op(main_stack, &current_opcode);
                                 break;
 
                         case BBQ:
-				/* DEBUG */
-				printf("pushing character\n");
-				/**/
-                                char_op(main_stack);
+                                err = char_op(main_stack);
                                 break;
 
                         default:
-				/* DEBUG */
-				printf("pushing integer\n");
-				/**/
                                 ten_or_more_op(main_stack, opcode);
                                 break;
 
                 }
+		error_handler(err, opcode, main_stack);
                 opcode = next_opcode(&current_opcode);
        
-                print_stack(data_segment->next);
-		char car;
-		scanf("%c", &car); // wow this stops the programm
         }
 
         stackelem *top_of_stack = stack_peek(main_stack);
 
-	print_stackelem(top_of_stack);
+	print_stackelem(top_of_stack, 0);
 
         free_stack(main_stack);
-	//free(user_input);
 
         return 0;
 }
@@ -402,11 +460,7 @@ int main(int argc, char *argv[]){
                 printf("%s does not exist!\n", file);
                 return 1;
         }
-	
 
-	/*if (argc >= 3)
-                compile(program_segment, argv[2]);
-        else*/
 	if (!isatty(STDIN_FILENO))
         	compile(program_segment, read_stdin());
 	else

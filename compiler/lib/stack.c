@@ -1,4 +1,5 @@
 #include "stack.h"
+#include "error.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,16 +35,19 @@ char *value_name(VALUE_TYPE t){
 	}
 }
 
-void print_stackelem(stackelem *e){
+void print_stackelem(stackelem *e, char sep){
+              
+	if (e == NULL) {printf("NULL%c", sep); return;}
+
 	switch (e->value_type){
 		case STRING:
-			printf("%s, ", e->value.str);
+			printf("%s%c", e->value.str, sep);
 			break;
 		case INTEGER:
-			printf("%d, ", e->value.integer);
+			printf("%d%c", e->value.integer, sep);
 			break;
 		case POINTER:
-			printf("%p, ", e->value.pointer);
+			printf("%p%c", e->value.pointer, sep);
 			break;
 		default:
 			printf("<unknown type> ");
@@ -53,13 +57,15 @@ void print_stackelem(stackelem *e){
 }
 
 void print_stack(stackelem *first){
+	if (first == NULL) {printf("[]\n"); return;}
 	printf("[ ");
 	stackelem *iter = first;
-	while (iter != NULL){
-		print_stackelem(iter);
+	while (iter->next != NULL){
+		print_stackelem(iter, ' ');
 		iter = iter->next;
 	}
-    	printf("]\n");
+	print_stackelem(iter, 0);
+    	printf(" ]\n");
 }
 
 stackelem *create_int_stackelem(int value){
@@ -238,7 +244,6 @@ stackelem *stack_get(stackelem* first, int index){
 int stack_length(stackelem *first){
     stackelem *iter = first;
     if (iter == NULL) return 0;
-    if (iter->next == NULL) return 1;
     int length = 1;
     while (iter->next != NULL){
         length++;
@@ -282,41 +287,55 @@ void stack_add_elem(stackelem *stack, stackelem *element){
 
 }
 
-// int, so that we can handle errors more elegantly
-// i think 99 chickens might fail because i solved storing with pointers only instead of making a copy of the object. pretty sure it has the ability to fug thungs up
-int stack_store_elem(stackelem *stack, stackelem *element, int store_to){
-    stackelem *prev;
-    stackelem *current;
-    stackelem *next;
+stackelem *stack_copy_elem(stackelem *element){
+
+	stackelem *copy;
+
+	switch (element->value_type){
+		case INTEGER:
+			copy = create_int_stackelem(element->value.integer);
+			break;
+		case STRING:
+			copy = create_string_stackelem(element->value.str);
+			break;
+		case POINTER:
+			copy = create_pointer_stackelem(element->value.pointer);
+			break;
+		default:
+			copy = NULL;
+	}
+
+	copy->next = NULL;
+	copy->prev = NULL;
+
+	return copy;
+
+}
+
+ERROR_TYPE stack_store_elem(stackelem *stack, stackelem *element, int store_to){
     
-    // cannot get anything below zero:
-    if (store_to < 0) return 1;
+    if (store_to < 0 || store_to-1 > stack_length(stack) ) return OUT_OF_BOUNDS;
 
-    /* the stack enumeration in chicken starts from index 1 */
-    int i = 0;
-    stackelem *iter = stack;
-    while (iter->next != NULL && i < store_to-1){ // store_to-1 because we want the element before the given index
-        iter = iter->next;
-        i++;
-    }
+    stackelem *left_n = stack;
 
-    // couldn't get to that index -> out of bounds
-    if (i < store_to-1) return 1;
+    while (--store_to)
+        left_n = left_n->next;
 
-    prev = iter;
+    stackelem *copy = stack_copy_elem(element);
 
-    if (prev->next == NULL){
-        prev->next = element;
-        return 0;
-    }
+    stackelem *middle = left_n->next;
+    stackelem *right_n = middle->next;
 
-    current = prev->next;
-    next = current->next;
+    left_n->next = NULL;
+    right_n->prev = NULL;
 
-    prev->next = element;
-    element->next = next;
+    free(middle);
 
-    free(current);
+    left_n->next = copy;
+    copy->prev = left_n;
 
-    return 0;
+    copy->next = right_n;
+    right_n->prev = copy;
+
+    return NONE;
 }
