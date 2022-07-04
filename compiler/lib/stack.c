@@ -120,9 +120,10 @@ stackelem *create_pointer_stackelem(stackelem *value){
     return new;
 }
 
-void stack_push_int(stackelem *first, int value){
+stackelem *stack_push_int(stackelem *first, int value){
 
-    if (first==NULL) return;
+    if (first==NULL)
+	    return create_int_stackelem(value);
 
     stackelem *iter = first;
     while ( iter->next != NULL )
@@ -133,11 +134,13 @@ void stack_push_int(stackelem *first, int value){
     new->prev  = iter;
     new->next = NULL;
 
+    return first;
+
 }
 
 stackelem *stack_push_back_int(stackelem *first, int value){
 
-    if (first==NULL) return NULL;
+    if (first==NULL) return create_int_stackelem(value);
 
     stackelem *new = create_int_stackelem(value);
     new->next = first;

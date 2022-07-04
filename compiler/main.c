@@ -98,17 +98,22 @@ void parser_error(const char *buf, int row, int col){
 	exit(1);
 }
 
+void clear_buffer(char *buf, int *fill){
+	while(*fill)
+		buf[(*fill)--] = 0;
+}
+
 // TODO fix this
 stackelem *tokenize(char *filename){
 
 	char buf[CHN_LEN+1];
-	char buf_index = 0;
+	int buf_index = 0;
 
 	FILE *input = fopen(filename, "r");
         int row = 1, col = 1;
 
         if (input == NULL)
-                return NULL;
+                panic();
 	
 	char c, prev = 0;
 	int chickens = 0;
@@ -118,45 +123,33 @@ stackelem *tokenize(char *filename){
                 c = getc(input);
 		col++;
 		buf[buf_index++] = c;
-		for (int i = 0; i<buf_index; i++)
-			printf("%c", buf[i]);
-		printf("\n");
 		if (buf_index == CHN_LEN+2){
-			printf("too_much\n");
 			buf[CHN_LEN] = 0;
 			parser_error(buf, row, col);
 		}
 
 		if (c == ' ') {
-			printf("space\n");
 			chickens++;
-			buf[buf_index++] = '\0';
-			if (!strcmp("chicken", buf))
+			buf[--buf_index] = '\0';
+			if (strcmp("chicken", buf))
 				parser_error(buf, row, col);
-			while (buf_index){
-				buf_index--;
-				buf[buf_index] = 0;
-			}
+			clear_buffer(buf, &buf_index);
 		}
 		else if (c == '\n'){
-			
 
 			row++;
 			col = 0;
 
 			if (prev != '\n') {
 				chickens++;
-				while (buf_index){
-					buf[buf_index] = 0;
-					buf_index--;
-				}
+				buf[--buf_index]=0;
+				if (strcmp("chicken", buf))
+						parser_error(buf, row, col);
 			}
 
-                        if (stack == NULL)
-                                stack = create_int_stackelem(chickens);
-                        else
-			        stack_push_int(stack, chickens);
+			stack = stack_push_int(stack, chickens);
 			chickens = 0;
+			clear_buffer(buf, &buf_index);
 
 		}
                 prev = c;
@@ -391,7 +384,7 @@ int compile(stackelem *code_segment, char *user_input){
 
         while (opcode != AXE){
 
-		ERROR_TYPE err;
+		ERROR_TYPE err = NONE;
 
                 switch (opcode) {
 
@@ -433,7 +426,13 @@ int compile(stackelem *code_segment, char *user_input){
 
                 }
 		error_handler(err, opcode, main_stack);
+		err = NONE;
                 opcode = next_opcode(&current_opcode);
+		print_stack(data_segment->next);
+
+		/*
+		char c;
+		scanf("%c", &c);*/
        
         }
 

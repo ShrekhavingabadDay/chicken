@@ -29,7 +29,7 @@ typedef struct _stackelem {
 
 void free_stack(stackelem *a);
 
-void stack_push_int(stackelem *a, int value);
+stackelem* stack_push_int(stackelem *a, int value);
 void stack_push_string(stackelem *stack, const char *value);
 void stack_push_char(stackelem *first, const char c);
 

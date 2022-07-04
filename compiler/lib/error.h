@@ -10,5 +10,6 @@ typedef enum {
 
 void show_error(ERROR_TYPE e, char *op_name);
 void show_syntax_error(const char *buf, int row, int col);
+void panic();
 
 #endif

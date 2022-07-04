@@ -1,8 +1,13 @@
 #include "error.h"
 #include <stdio.h>
+#include <stdlib.h>
+
+// ansi escape code for red
+const char *RED   = "\033[0;31m";
+const char *RESET = "\033[0m";
 
 void show_error(ERROR_TYPE e, char *op_name){
-	printf("\033[0;31m");
+	printf("%s", RED);
 	switch (e) {
 		case SYNTAX:
 			printf("Syntax error");
@@ -17,9 +22,14 @@ void show_error(ERROR_TYPE e, char *op_name){
 			break;
 	}
 
-	printf(" at operand %s\033[0m\n", op_name);
+	printf(" at operand %s%s\n", op_name, RESET);
 }
 
 void show_syntax_error(const char *buf, int row, int col){
-	printf("\033[0;31mSyntax error on row %d\nat character %d:\nExpected chicken, got %s...\033[0m\n", row, col, buf);
+	printf("%sSyntax error on row %d\nat character %d:\nExpected chicken, got %s...%s\n", RED, row, col, buf, RESET);
+}
+
+void panic(){
+	printf("%sbruh%s", RED, RESET);
+	exit(1);
 }
