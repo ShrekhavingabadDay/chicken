@@ -103,7 +103,6 @@ void clear_buffer(char *buf, int *fill){
 		buf[(*fill)--] = 0;
 }
 
-// TODO fix this
 stackelem *tokenize(char *filename){
 
 	char buf[CHN_LEN+1];
@@ -128,15 +127,15 @@ stackelem *tokenize(char *filename){
 			parser_error(buf, row, col);
 		}
 
-		if (c == ' ') {
+		switch (c) {
+		case ' ':
 			chickens++;
 			buf[--buf_index] = '\0';
 			if (strcmp("chicken", buf))
 				parser_error(buf, row, col);
 			clear_buffer(buf, &buf_index);
-		}
-		else if (c == '\n'){
-
+			break;
+		case '\n':
 			row++;
 			col = 0;
 
@@ -150,6 +149,15 @@ stackelem *tokenize(char *filename){
 			stack = stack_push_int(stack, chickens);
 			chickens = 0;
 			clear_buffer(buf, &buf_index);
+			break;
+		case '#':
+			do{
+				c = getc(input);
+				clear_buffer(buf, &buf_index);
+			} while (c != '\n');
+			break;
+		default:
+			break;
 
 		}
                 prev = c;
@@ -428,7 +436,7 @@ int compile(stackelem *code_segment, char *user_input){
 		error_handler(err, opcode, main_stack);
 		err = NONE;
                 opcode = next_opcode(&current_opcode);
-		print_stack(data_segment->next);
+		// print_stack(data_segment->next);
 
 		/*
 		char c;
